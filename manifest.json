@@ -1,0 +1,26 @@
+{
+  "manifest_version": 2,
+  "name": "JMon check generator",
+  "version": "0.1",
+  "description": "JMon check user-journey generator",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "permissions": [
+    "tabs",
+    "storage"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
+
