@@ -27,11 +27,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   console.log("Got message")
   console.log(message);
   if (message.type === 'goto') {
-    addStep({goto: message.url})
+    addStep(` - goto: ${message.url}`);
   }
   if (message.type === 'urlChange') {
     // Log the new URL to the console
     console.log('New URL:', message.url);
-    addStep({check: {url: message.url}});
+    addStep(` - check:
+    - url: ${message.url}`);
   }
 });
