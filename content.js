@@ -44,6 +44,7 @@ function injectDomListener() {
     } else if (getUniqueClassForTarget(event.target)) {
       step += `class: ${getUniqueClassForTarget(event.target)}`;
     } else {
+      addStep('# WARNING: Unable to identifier for click step');
       return;
     }
     step += `\n     - actions:\n        - click`;
