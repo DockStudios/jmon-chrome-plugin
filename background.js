@@ -1,20 +1,19 @@
-// Add a listener for URL changes
-// chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-//   console.log(tabId);
-//   if (changeInfo.status === 'complete') {
-//     // Send a message to the content script with the new URL
-    
-//   }
-// });
-
+let transitions = {};
 
 chrome.webNavigation.onCommitted.addListener(function(details) {
-  // Only check for requests of the actual tab
   if (details.frameId === 0) {
     if (details.transitionType === 'typed') {
-      chrome.tabs.sendMessage(details.tabId, {type: 'goto', url: details.url});
+      transitions[details.tabId] = {type: 'goto', url: details.url};
     } else {
-      chrome.tabs.sendMessage(details.tabId, {type: 'urlChange', url: details.url});
+      transitions[details.tabId] = {type: 'urlChange', url: details.url};
     }
+  }
+});
+
+chrome.webNavigation.onCompleted.addListener(function(details) {
+  // Only check for requests of the actual tab
+  if (transitions[details.tabId]) {
+    chrome.tabs.sendMessage(details.tabId, transitions[details.tabId]);
+    transitions[details.tabId] = undefined;
   }
 });
