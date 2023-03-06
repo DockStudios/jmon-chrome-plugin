@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "JMon check generator",
   "version": "0.1",
   "description": "JMon check user-journey generator",
@@ -14,8 +14,7 @@
     "webNavigation"
   ],
   "background": {
-    "scripts": ["background.js"],
-    "persistent": true
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
