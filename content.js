@@ -71,43 +71,51 @@ function identifierLooksRandom(id) {
   return result;
 }
 
-function injectDomListener() {
-  console.log("Injecting DOM Listener");
-  document.addEventListener("click", function(event) {
-    console.log("Clicked on", event.target);
-    // Calculate how to find element
-    let step = `   - find:\n`;
-    let uniqueClassName = getUniqueClassForTarget(event.target);
-    // Check for ID match
-    if (event.target.id) {
-      step += `     - id: ${event.target.id}`;
+function getFindForTarget(target) {
+  // Calculate how to find element
+  let step = `   - find:\n`;
+  let uniqueClassName = getUniqueClassForTarget(target);
+  // Check for ID match
+  if (target.id) {
+    step += `     - id: ${target.id}`;
 
-    // Otherwise check for placeholder, since this
-    // is more user-friendly
-    } else if (event.target.getAttribute ('placeholder')) {
-      step += `     - placeholder: ${event.target.getAttribute ('placeholder')}`;
+  // Otherwise check for placeholder, since this
+  // is more user-friendly
+  } else if (target.getAttribute('placeholder')) {
+    step += `     - placeholder: ${target.getAttribute ('placeholder')}`;
 
-    // Check for non-unique class names
-    } else if (uniqueClassName && identifierLooksRandom(uniqueClassName)) {
-      step += `     - class: ${uniqueClassName}`;
+  // Check for non-unique class names
+  } else if (uniqueClassName && identifierLooksRandom(uniqueClassName)) {
+    step += `     - class: ${uniqueClassName}`;
 
-    // Check for content
-    } else if (getUniqueContentForTarget(event.target)) {
-      step += `     - tag: ${event.target.nodeName}\n     - text: ${getUniqueContentForTarget(event.target)}`
-    
-    // Use non-unique class name
-    } else if (uniqueClassName) {
-      step += `     - class: ${uniqueClassName}`;
-    } else {
-      addStep('# WARNING: Unable to identifier for click step');
-      return;
-    }
-    step += `\n     - actions:\n        - click`;
-    addStep(step);
-  });
+  // Check for content
+  } else if (getUniqueContentForTarget(target)) {
+    step += `     - tag: ${target.nodeName}\n     - text: ${getUniqueContentForTarget(target)}`
+  
+  // Use non-unique class name
+  } else if (uniqueClassName) {
+    step += `     - class: ${uniqueClassName}`;
+  } else {
+    return null;
+  }
+  return step;
 }
 
+function handleDomClick(event) {
+  console.log("Clicked on", event.target);
+  let step = getFindForTarget(event.target);
+  if (!step) {
+    addStep('# WARNING: Unable to identifier for click step');
+    return;
+  }
+  step += `\n     - actions:\n        - click`;
+  addStep(step);
+}
 
+function injectDomListeners() {
+  console.log("Injecting DOM Listeners");
+  document.addEventListener("click", handleDomClick);
+}
 
 // Listen for URL change messages from the background script
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
@@ -119,6 +127,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     addStep(`   - check:\n        url: "${message.url}"`);
   }
   if (message.type == 'injectDomListener') {
-    injectDomListener();
+    injectDomListeners();
   }
 });
