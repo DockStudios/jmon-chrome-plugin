@@ -76,33 +76,33 @@ function injectDomListener() {
   document.addEventListener("click", function(event) {
     console.log("Clicked on", event.target);
     // Calculate how to find element
-    let step = ` - find:\n`;
+    let step = `   - find:\n`;
     let uniqueClassName = getUniqueClassForTarget(event.target);
     // Check for ID match
     if (event.target.id) {
-      step += `   - id: ${event.target.id}`;
+      step += `     - id: ${event.target.id}`;
 
     // Otherwise check for placeholder, since this
     // is more user-friendly
     } else if (event.target.getAttribute ('placeholder')) {
-      step += `   - placeholder: ${event.target.getAttribute ('placeholder')}`;
+      step += `     - placeholder: ${event.target.getAttribute ('placeholder')}`;
 
     // Check for non-unique class names
     } else if (uniqueClassName && identifierLooksRandom(uniqueClassName)) {
-      step += `   - class: ${uniqueClassName}`;
+      step += `     - class: ${uniqueClassName}`;
 
     // Check for content
     } else if (getUniqueContentForTarget(event.target)) {
-      step += `   - tag: ${event.target.nodeName}\n   - text: ${getUniqueContentForTarget(event.target)}`
+      step += `     - tag: ${event.target.nodeName}\n     - text: ${getUniqueContentForTarget(event.target)}`
     
     // Use non-unique class name
     } else if (uniqueClassName) {
-      step += `class: ${uniqueClassName}`;
+      step += `     - class: ${uniqueClassName}`;
     } else {
       addStep('# WARNING: Unable to identifier for click step');
       return;
     }
-    step += `\n   - actions:\n      - click`;
+    step += `\n     - actions:\n        - click`;
     addStep(step);
   });
 }
@@ -112,12 +112,11 @@ function injectDomListener() {
 // Listen for URL change messages from the background script
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.type === 'goto') {
-    addStep(` - goto: ${message.url}`);
+    addStep(`   - goto: ${message.url}`);
   }
   if (message.type === 'urlChange') {
     // Log the new URL to the console
-    addStep(` - check:
-    - url: ${message.url}`);
+    addStep(`   - check:\n      - url: ${message.url}`);
   }
   if (message.type == 'injectDomListener') {
     injectDomListener();
