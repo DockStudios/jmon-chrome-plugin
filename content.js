@@ -147,9 +147,7 @@ async function checkCompleteStartStep(stepType, target, value) {
     } else {
       // If step type and target are the same, append data
       if (currentStep[0] == "TYPE") {
-        console.log(`${currentStep[2]}${value}`);
-        currentStep = [currentStep[0], currentStep[1], `${currentStep[2]}${value}`];
-        console.log(currentStep);
+        currentStep[2] += value;
       }
     }
     resolve();
