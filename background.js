@@ -29,3 +29,13 @@ chrome.webNavigation.onCompleted.addListener(function(details) {
 
   notifyInjectDomListener(details.tabId);
 });
+
+chrome.contextMenus.removeAll();
+chrome.contextMenus.create({
+  id: "jmon_check_element_content",
+  title: "Check element content",
+  contexts: ["all"]
+});
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  chrome.tabs.sendMessage(tab.id, {type: "checkContextMenuContent"});
+})

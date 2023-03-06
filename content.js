@@ -1,5 +1,7 @@
 
-let currentStep = [];
+var currentStep = [];
+var currentContextMenuTarget = undefined;
+
 
 async function addStep(step) {
   return new Promise((resolve, reject) => {
@@ -130,6 +132,21 @@ async function completeTypeStep(target, text) {
   await addStep(step);
 }
 
+async function addCheckStepContextMenuContent() {
+  await checkCompleteStartStep("CONTEXT_MENU_CONTENT", undefined, undefined);
+  if (! currentContextMenuTarget || ! currentContextMenuTarget.target) {
+    console.log("Cannot find current context menu item")
+    return;
+  }
+  let step = getFindForTarget(currentContextMenuTarget.target);
+  if (!step) {
+    await addStep("# WARNING: Unable to find identifier for element for manual content check");
+    return;
+  }
+  step += `\n     - check:\n        text: ${currentContextMenuTarget.target.textContent}`;
+  await addStep(step);
+}
+
 async function checkCompleteStartStep(stepType, target, value) {
   return new Promise(async (resolve, reject) => {
     // Check if a step is in progress and doens't match
@@ -153,10 +170,21 @@ async function checkCompleteStartStep(stepType, target, value) {
   });
 }
 
+function updateContextMenuElement(target) {
+  currentContextMenuTarget = target;
+}
+
 function injectDomListeners() {
   console.log("Injecting DOM Listeners");
+  // Add listener for click/input events
   document.addEventListener("click", handleDomClick);
   document.addEventListener("input", handleDomInput);
+
+  // Add listener for context menu events, so that
+  // triggers to our context menu can capture the element
+  // it was triggered on
+  document.addEventListener("contextmenu", updateContextMenuElement);
+
 }
 
 // Listen for URL change messages from the background script
@@ -164,12 +192,12 @@ chrome.runtime.onMessage.addListener(async function(message, sender, sendRespons
   if (message.type === 'goto') {
     checkCompleteStartStep("GOTO", undefined, undefined);
     await addStep(`   - goto: "${message.url}"`);
-  }
-  if (message.type === 'urlChange') {
+  } else if (message.type === 'urlChange') {
     checkCompleteStartStep("REDIRECT", undefined, undefined);
     await addStep(`   - check:\n        url: "${message.url}"`);
-  }
-  if (message.type == 'injectDomListener') {
+  } else if (message.type == 'injectDomListener') {
     injectDomListeners();
+  } else if (message.type == "checkContextMenuContent") {
+    addCheckStepContextMenuContent();
   }
 });
