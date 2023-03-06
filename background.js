@@ -1,14 +1,7 @@
 let transitions = {};
 
-function injectDomListener(tabId) {
-  chrome.tabs.executeScript(tabId, {
-    code: `
-      document.addEventListener("click", function(event) {
-        console.log("Clicked on", event.target);
-        // do something with the clicked element here
-      });
-    `
-  });
+function notifyInjectDomListener(tabId) {
+  chrome.tabs.sendMessage(tabId, {type: 'injectDomListener'});
 }
 
 chrome.webNavigation.onCommitted.addListener(function(details) {
@@ -28,5 +21,5 @@ chrome.webNavigation.onCompleted.addListener(function(details) {
     transitions[details.tabId] = undefined;
   }
 
-  injectDomListener(details.tabId);
+  notifyInjectDomListener(details.tabId);
 });
