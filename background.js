@@ -1,9 +1,12 @@
 let transitions = {};
 
+// Send message to content to inject DOM listeners
 function notifyInjectDomListener(tabId) {
   chrome.tabs.sendMessage(tabId, {type: 'injectDomListener'});
 }
 
+// Add listener for begin of page load to
+// capture URL and reason for URL change.
 chrome.webNavigation.onCommitted.addListener(function(details) {
   if (details.frameId === 0) {
     if (details.transitionType === 'typed') {
@@ -14,6 +17,8 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
   }
 });
 
+// On navigation completed, send message to content to capture
+// step
 chrome.webNavigation.onCompleted.addListener(function(details) {
   // Only check for requests of the actual tab
   if (transitions[details.tabId]) {
