@@ -9,7 +9,8 @@ function notifyInjectDomListener(tabId) {
 // capture URL and reason for URL change.
 chrome.webNavigation.onCommitted.addListener(function(details) {
   if (details.frameId === 0) {
-    if (details.transitionType === 'typed') {
+    console.log(details.transitionType);
+    if (details.transitionType === 'typed' || details.transitionType === 'reload') {
       transitions[details.tabId] = {type: 'goto', url: details.url};
     } else {
       transitions[details.tabId] = {type: 'urlChange', url: details.url};
