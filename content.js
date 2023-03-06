@@ -116,7 +116,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   }
   if (message.type === 'urlChange') {
     // Log the new URL to the console
-    addStep(`   - check:\n      - url: "${message.url}"`);
+    addStep(`   - check:\n        url: "${message.url}"`);
   }
   if (message.type == 'injectDomListener') {
     injectDomListener();
