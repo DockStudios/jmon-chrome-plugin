@@ -1,8 +1,12 @@
 function showSteps() {
-    console.log("called");
     let stepsDiv = document.getElementById("steps");
     chrome.storage.local.get('jmonData', function(previousSteps) {
-        stepsDiv.innerHTML = previousSteps.jmonData.join("\n");
+        // If there are steps defined, show them with an initial block
+        if (previousSteps.jmonData.length > 0) {
+            stepsDiv.innerHTML = "steps:\n" + previousSteps.jmonData.join("\n");
+        } else {
+            stepsDiv.innerHTML = "# No steps have been recorded"
+        }
     });
 }
 
