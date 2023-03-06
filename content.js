@@ -1,23 +1,25 @@
 
 let currentStep = [];
 
-function addStep(step) {
-  chrome.storage.local.get('jmonData', function(previousSteps) {
-    if (chrome.runtime.lastError) {
-      console.error(chrome.runtime.lastError);
-      return;
-    }
-    allSteps = previousSteps.jmonData || [];
-    allSteps.push(step);
-
-    console.debug("All steps:");
-    console.debug(allSteps);
-
-    chrome.storage.local.set({ jmonData: allSteps }, function() {
+async function addStep(step) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get('jmonData', function(previousSteps) {
       if (chrome.runtime.lastError) {
         console.error(chrome.runtime.lastError);
-        return;
+        reject();
       }
+      allSteps = previousSteps.jmonData || [];
+      allSteps.push(step);
+
+      console.debug("All steps:");
+      console.debug(allSteps);
+
+      chrome.storage.local.set({ jmonData: allSteps }, function() {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError);
+        }
+        return resolve();
+      });
     });
   });
 }
@@ -103,52 +105,55 @@ function getFindForTarget(target) {
   return step;
 }
 
-function handleDomClick(event) {
+async function handleDomClick(event) {
   console.log("Clicked on", event.target);
-  checkCompleteStartStep("CLICK", event.target, undefined);
+  await checkCompleteStartStep("CLICK", event.target, undefined);
   let step = getFindForTarget(event.target);
   if (!step) {
-    addStep('# WARNING: Unable to identifier for click step');
+    await addStep('# WARNING: Unable to identifier for click step');
     return;
   }
   step += `\n     - actions:\n        - click`;
-  addStep(step);
+  await addStep(step);
 }
 
-function handleDomInput(event) {
-  checkCompleteStartStep("TYPE", event.target, event.data);
+async function handleDomInput(event) {
+  await checkCompleteStartStep("TYPE", event.target, event.data);
 }
 
-function completeTypeStep(target, text) {
+async function completeTypeStep(target, text) {
   let step = getFindForTarget(target);
   if (!step) {
-    addStep('# WARNING: Unable to identifier for text typing');
+    await addStep('# WARNING: Unable to identifier for text typing');
     return;
   }
   step += `\n     - actions:\n        - type: ${text}`;
-  addStep(step);
+  await addStep(step);
 }
 
-function checkCompleteStartStep(stepType, target, value) {
-  // Check if a step is in progress and doens't match
-  // the current step
-  if (currentStep) {
-    if (currentStep && (currentStep[0] != stepType || currentStep[1] != target)) {
-      console.log(`END OF STEP: ${currentStep[0]}`);
-      if (currentStep[0] == "TYPE") {
-        // Complete previous type step
-        completeTypeStep(currentStep[1], currentStep[2]);
-      }
-    // If step type and target are the same, append data
-    } else {
-      if (currentStep[0] == "TYPE") {
-        console.debug(`Adding text to type: ${value}`);
-        currentStep[2] += value;
+async function checkCompleteStartStep(stepType, target, value) {
+  return new Promise(async (resolve, reject) => {
+    // Check if a step is in progress and doens't match
+    // the current step
+    if (currentStep) {
+      if (currentStep && (currentStep[0] != stepType || currentStep[1] != target)) {
+        console.log(`END OF STEP: ${currentStep[0]}`);
+        if (currentStep[0] == "TYPE") {
+          // Complete previous type step
+          await completeTypeStep(currentStep[1], currentStep[2]);
+        }
+      // If step type and target are the same, append data
+      } else {
+        if (currentStep[0] == "TYPE") {
+          console.debug(`Adding text to type: ${value}`);
+          currentStep[2] += value;
+        }
       }
     }
-  }
-  // Set current step to this step type
-  currentStep = [stepType, target, value];
+    // Set current step to this step type
+    currentStep = [stepType, target, value];
+    resolve();
+  });
 }
 
 function injectDomListeners() {
@@ -158,14 +163,14 @@ function injectDomListeners() {
 }
 
 // Listen for URL change messages from the background script
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(async function(message, sender, sendResponse) {
   if (message.type === 'goto') {
     checkCompleteStartStep("GOTO", undefined, undefined);
-    addStep(`   - goto: "${message.url}"`);
+    await addStep(`   - goto: "${message.url}"`);
   }
   if (message.type === 'urlChange') {
     checkCompleteStartStep("REDIRECT", undefined, undefined);
-    addStep(`   - check:\n        url: "${message.url}"`);
+    await addStep(`   - check:\n        url: "${message.url}"`);
   }
   if (message.type == 'injectDomListener') {
     injectDomListeners();
