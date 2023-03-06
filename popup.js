@@ -21,6 +21,6 @@ function clearSteps() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById("updateStepsButton").addEventListener("click", showSteps);
+    showSteps();
     document.getElementById("clearStepsButton").addEventListener("click", clearSteps);
 });
