@@ -106,7 +106,6 @@ function getFindForTarget(target) {
 }
 
 async function handleDomClick(event) {
-  console.log("Clicked on", event.target);
   await checkCompleteStartStep("CLICK", event.target, undefined);
   let step = getFindForTarget(event.target);
   if (!step) {
