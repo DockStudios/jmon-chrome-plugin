@@ -1,4 +1,6 @@
 
+let currentStep = [];
+
 function addStep(step) {
   chrome.storage.local.get('jmonData', function(previousSteps) {
     if (chrome.runtime.lastError) {
@@ -103,6 +105,7 @@ function getFindForTarget(target) {
 
 function handleDomClick(event) {
   console.log("Clicked on", event.target);
+  checkCompleteStartStep("CLICK", event.target, undefined);
   let step = getFindForTarget(event.target);
   if (!step) {
     addStep('# WARNING: Unable to identifier for click step');
@@ -112,18 +115,56 @@ function handleDomClick(event) {
   addStep(step);
 }
 
+function handleDomInput(event) {
+  checkCompleteStartStep("TYPE", event.target, event.data);
+}
+
+function completeTypeStep(target, text) {
+  let step = getFindForTarget(target);
+  if (!step) {
+    addStep('# WARNING: Unable to identifier for text typing');
+    return;
+  }
+  step += `\n     - actions:\n        - type: ${text}`;
+  addStep(step);
+}
+
+function checkCompleteStartStep(stepType, target, value) {
+  // Check if a step is in progress and doens't match
+  // the current step
+  if (currentStep) {
+    if (currentStep && (currentStep[0] != stepType || currentStep[1] != target)) {
+      console.log(`END OF STEP: ${currentStep[0]}`);
+      if (currentStep[0] == "TYPE") {
+        // Complete previous type step
+        completeTypeStep(currentStep[1], currentStep[2]);
+      }
+    // If step type and target are the same, append data
+    } else {
+      if (currentStep[0] == "TYPE") {
+        console.debug(`Adding text to type: ${value}`);
+        currentStep[2] += value;
+      }
+    }
+  }
+  // Set current step to this step type
+  currentStep = [stepType, target, value];
+}
+
 function injectDomListeners() {
   console.log("Injecting DOM Listeners");
   document.addEventListener("click", handleDomClick);
+  document.addEventListener("input", handleDomInput);
 }
 
 // Listen for URL change messages from the background script
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.type === 'goto') {
+    checkCompleteStartStep("GOTO", undefined, undefined);
     addStep(`   - goto: "${message.url}"`);
   }
   if (message.type === 'urlChange') {
-    // Log the new URL to the console
+    checkCompleteStartStep("REDIRECT", undefined, undefined);
     addStep(`   - check:\n        url: "${message.url}"`);
   }
   if (message.type == 'injectDomListener') {
