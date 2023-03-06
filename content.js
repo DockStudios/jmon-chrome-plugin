@@ -135,23 +135,23 @@ async function checkCompleteStartStep(stepType, target, value) {
   return new Promise(async (resolve, reject) => {
     // Check if a step is in progress and doens't match
     // the current step
-    if (currentStep) {
-      if (currentStep && (currentStep[0] != stepType || currentStep[1] != target)) {
-        console.log(`END OF STEP: ${currentStep[0]}`);
-        if (currentStep[0] == "TYPE") {
-          // Complete previous type step
-          await completeTypeStep(currentStep[1], currentStep[2]);
-        }
+    if (!currentStep || (currentStep[0] != stepType || currentStep[1] != target)) {
+
+      if (currentStep[0] == "TYPE") {
+        // Complete previous type step
+        await completeTypeStep(currentStep[1], currentStep[2]);
+      }
+
+      // Set current step to this step type
+      currentStep = [stepType, target, value];
+    } else {
       // If step type and target are the same, append data
-      } else {
-        if (currentStep[0] == "TYPE") {
-          console.debug(`Adding text to type: ${value}`);
-          currentStep[2] += value;
-        }
+      if (currentStep[0] == "TYPE") {
+        console.log(`${currentStep[2]}${value}`);
+        currentStep = [currentStep[0], currentStep[1], `${currentStep[2]}${value}`];
+        console.log(currentStep);
       }
     }
-    // Set current step to this step type
-    currentStep = [stepType, target, value];
     resolve();
   });
 }
