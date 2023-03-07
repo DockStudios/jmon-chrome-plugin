@@ -94,15 +94,19 @@ function identifierLooksNoneRandom(id) {
 }
 
 function getParentStep(target, indentationCount, rootParent) {
-  let parent = target.parentNode;
-  // Create find for parent
-  let [parentStep, parentIndentation] = getExactFindForTarget(parent, indentationCount, rootParent);
+  let parent = target;
+  // Recurse down parents
+  while (parent !== document) {
+    parent = parent.parentNode;
 
-  if (parentStep !== null) {
-    let [childStep, childIndentation] = getExactFindForTarget(target, parentIndentation, parent);
+    let [parentStep, parentIndentation] = getExactFindForTarget(parent, indentationCount, rootParent);
 
-    if (childStep !== null) {
-      return [`${parentStep}\n${childStep}`, childIndentation];
+    if (parentStep !== null) {
+      let [childStep, childIndentation] = getExactFindForTarget(target, parentIndentation, parent);
+
+      if (childStep !== null) {
+        return [`${parentStep}\n${childStep}`, childIndentation];
+      }
     }
   }
   return [null, indentationCount];
