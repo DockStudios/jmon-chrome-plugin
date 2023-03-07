@@ -22,12 +22,14 @@ chrome.webNavigation.onCommitted.addListener(function(details) {
 // step
 chrome.webNavigation.onCompleted.addListener(function(details) {
   // Only check for requests of the actual tab
-  if (transitions[details.tabId]) {
-    chrome.tabs.sendMessage(details.tabId, transitions[details.tabId]);
-    transitions[details.tabId] = undefined;
-  }
+  if (details.frameId == 0) {
+    if (transitions[details.tabId]) {
+      chrome.tabs.sendMessage(details.tabId, transitions[details.tabId]);
+      transitions[details.tabId] = undefined;
+    }
 
-  notifyInjectDomListener(details.tabId);
+    notifyInjectDomListener(details.tabId);
+  }
 });
 
 chrome.contextMenus.removeAll();

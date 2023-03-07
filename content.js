@@ -54,6 +54,10 @@ function getUniqueContentForTarget(target, parent) {
   if (! target.textContent) {
     return null;
   }
+  // Ignore with large content or new lines
+  if (target.textContent.length > 30 || target.textContent.indexOf("\n") !== -1) {
+    return null;
+  }
 
   // Iterate over each class that matches content
   let found = false;
@@ -70,13 +74,23 @@ function getUniqueContentForTarget(target, parent) {
   return target.textContent;
 }
 
-const identifierLooksRandomRegex = new RegExp("[a-z]+[0-9]+[a-z]+");
-
-function identifierLooksRandom(id) {
+function identifierLooksNoneRandom(id) {
   console.debug(`Checking if identifier looks random: ${id}`);
-  const result = identifierLooksRandomRegex.exec(id) == null ? true : false;
-  console.debug(`Result: ${result}`);
-  return result;
+  let countCaps = (id.match(/[A-Z]/g) || '').length;
+  let countLower = (id.match(/[a-z]/g) || '').length;
+  let countDigits = (id.match(/[0-9]/g) || '').length;
+
+  
+  // check if high proportion of string is numbers of capitals
+  if (countCaps > (id.length / 3) || countDigits > (id.length / 3)) {
+    console.debug("Looks random");
+    return false;
+  } else if ((countCaps + countDigits) > (countLower / 2) ) {
+    console.debug("Looks random")
+    return false;
+  }
+  console.debug("Does not look random");
+  return true;
 }
 
 function getParentStep(target, indentationCount, rootParent) {
@@ -115,7 +129,7 @@ function getExactFindForTarget(target, indentationCount, parent=undefined) {
     foundIdentifier = true;
 
   // Check for non-unique class names
-  } else if (uniqueClassName && identifierLooksRandom(uniqueClassName)) {
+  } else if (uniqueClassName && identifierLooksNoneRandom(uniqueClassName)) {
     step += `${ind}  - class: ${uniqueClassName}`;
     foundIdentifier = true;
 
@@ -215,7 +229,7 @@ async function checkCompleteStartStep(stepType, target, value) {
       currentStep = [stepType, target, value];
     } else {
       // If step type and target are the same, append data
-      if (currentStep[0] == "TYPE") {
+      if (currentStep[0] == "TYPE" && value) {
         currentStep[2] += value;
       }
     }
