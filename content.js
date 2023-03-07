@@ -229,7 +229,7 @@ async function checkCompleteStartStep(stepType, target, value) {
       currentStep = [stepType, target, value];
     } else {
       // If step type and target are the same, append data
-      if (currentStep[0] == "TYPE") {
+      if (currentStep[0] == "TYPE" && value) {
         currentStep[2] += value;
       }
     }
