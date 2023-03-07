@@ -26,7 +26,7 @@ async function addStep(step) {
   });
 }
 
-function getUniqueClassForTarget(target) {
+function getUniqueClassForTarget(target, parent) {
   if ((! target.className) || typeof target.className !== "string") {
     console.debug("Could not find any classes attached to target");
     return;
@@ -40,7 +40,7 @@ function getUniqueClassForTarget(target) {
     }
 
     // Check if there's only one instance of class with the name
-    if (document.getElementsByClassName(className).length == 1) {
+    if (parent.getElementsByClassName(className).length == 1) {
       return className;
     } else {
       console.debug(`${className} is not unique`);
@@ -49,7 +49,7 @@ function getUniqueClassForTarget(target) {
   return null;
 }
 
-function getUniqueContentForTarget(target) {
+function getUniqueContentForTarget(target, parent) {
   // If target inner text is empty, return early
   if (! target.textContent) {
     return null;
@@ -57,7 +57,7 @@ function getUniqueContentForTarget(target) {
 
   // Iterate over each class that matches content
   let found = false;
-  for (const div of document.querySelectorAll(target.nodeName)) {
+  for (const div of parent.querySelectorAll(target.nodeName)) {
     if (div.textContent == target.textContent) {
       if (found) {
         // If a duplicate is found, do not use as identifier
@@ -79,44 +79,93 @@ function identifierLooksRandom(id) {
   return result;
 }
 
-function getFindForTarget(target) {
-  // Calculate how to find element
-  let step = `   - find:\n`;
-  let uniqueClassName = getUniqueClassForTarget(target);
+function getParentStep(target, indentationCount, rootParent) {
+  let parent = target.parentNode;
+  // Create find for parent
+  let [parentStep, parentIndentation] = getExactFindForTarget(parent, indentationCount, rootParent);
+
+  if (parentStep !== null) {
+    let [childStep, childIndentation] = getExactFindForTarget(target, parentIndentation, parent);
+
+    if (childStep !== null) {
+      return [`${parentStep}\n${childStep}`, childIndentation];
+    }
+  }
+  return [null, indentationCount];
+}
+
+function getExactFindForTarget(target, indentationCount, parent=undefined) {
+  if (parent === undefined) {
+    parent = document;
+  }
+  let ind = ' '.repeat(indentationCount);
+  let step = `${ind}- find:\n`;
+  let uniqueClassName = getUniqueClassForTarget(target, parent);
+  let foundIdentifier = false;
+
   // Check for ID match
   if (target.id) {
-    step += `     - id: ${target.id}`;
+    step += `${ind}  - id: ${target.id}`;
+    foundIdentifier = true;
 
   // Otherwise check for placeholder, since this
   // is more user-friendly
   } else if (target.getAttribute('placeholder')) {
-    step += `     - placeholder: ${target.getAttribute ('placeholder')}`;
+    step += `${ind}  - placeholder: ${target.getAttribute('placeholder')}`;
+    foundIdentifier = true;
 
   // Check for non-unique class names
   } else if (uniqueClassName && identifierLooksRandom(uniqueClassName)) {
-    step += `     - class: ${uniqueClassName}`;
+    step += `${ind}  - class: ${uniqueClassName}`;
+    foundIdentifier = true;
 
   // Check for content
-  } else if (getUniqueContentForTarget(target)) {
-    step += `     - tag: ${target.nodeName}\n     - text: ${getUniqueContentForTarget(target)}`
+  } else if (getUniqueContentForTarget(target, parent)) {
+    step += `${ind}  - tag: ${target.nodeName}\n${ind}  - text: ${getUniqueContentForTarget(target, parent)}`;
+    foundIdentifier = true;
   
   // Use non-unique class name
   } else if (uniqueClassName) {
-    step += `     - class: ${uniqueClassName}`;
-  } else {
-    return null;
+    step += `${ind}  - class: ${uniqueClassName}`;
+    foundIdentifier = true;
   }
-  return step;
+
+  return [foundIdentifier ? step : null , indentationCount + 2];
+}
+
+function getFindForTarget(target, indentationCount=3, parent=undefined) {
+  // Calculate how to find element
+  if (parent === undefined) {
+    parent = document;
+  }
+  let step = null;
+  let childIndentation = indentationCount;
+
+  // Check exact match
+  let exactFind = null;
+  [exactFind, childIndentation] = getExactFindForTarget(target, indentationCount, parent);
+  if (exactFind !== null) {
+    step = exactFind;
+  } else {
+    [parentFind, childIndentation] = getParentStep(target, indentationCount, parent);
+    // Limit to only the root indentation lookup
+    if (parentFind !== null) {
+      step = parentFind;
+    }
+  } 
+
+  return [step, childIndentation];
 }
 
 async function handleDomClick(event) {
   await checkCompleteStartStep("CLICK", event.target, undefined);
-  let step = getFindForTarget(event.target);
+  let [step, indentationCount] = getFindForTarget(event.target);
+  let indentation = ' '.repeat(indentationCount);
   if (!step) {
     await addStep('# WARNING: Unable to identifier for click step');
     return;
   }
-  step += `\n     - actions:\n        - click`;
+  step += `\n${indentation}- actions:\n${indentation}  - click`;
   await addStep(step);
 }
 
@@ -125,12 +174,13 @@ async function handleDomInput(event) {
 }
 
 async function completeTypeStep(target, text) {
-  let step = getFindForTarget(target);
+  let [step, indentationCount] = getFindForTarget(target);
+  let indentation = ' '.repeat(indentationCount);
   if (!step) {
     await addStep('# WARNING: Unable to identifier for text typing');
     return;
   }
-  step += `\n     - actions:\n        - type: ${text}`;
+  step += `\n${indentation}- actions:\n${indentation}  - type: ${text}`;
   await addStep(step);
 }
 
@@ -140,12 +190,13 @@ async function addCheckStepContextMenuContent() {
     console.log("Cannot find current context menu item")
     return;
   }
-  let step = getFindForTarget(currentContextMenuTarget.target);
+  let [step, indentationCount] = getFindForTarget(currentContextMenuTarget.target);
+  let indentation = ' '.repeat(indentationCount);
   if (!step) {
     await addStep("# WARNING: Unable to find identifier for element for manual content check");
     return;
   }
-  step += `\n     - check:\n        text: ${currentContextMenuTarget.target.textContent}`;
+  step += `\n${indentation}- check:\n${indentation}   text: ${currentContextMenuTarget.target.textContent}`;
   await addStep(step);
 }
 
