@@ -54,6 +54,10 @@ function getUniqueContentForTarget(target, parent) {
   if (! target.textContent) {
     return null;
   }
+  // Ignore with large content or new lines
+  if (target.textContent.length > 30 || target.textContent.indexOf("\n") !== -1) {
+    return null;
+  }
 
   // Iterate over each class that matches content
   let found = false;
