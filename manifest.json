@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "JMon check generator",
+  "name": "JMon Check Generator",
   "version": "0.1",
-  "description": "JMon check user-journey generator",
+  "description": "Automatically generate JMon check user-journey step configuration",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
