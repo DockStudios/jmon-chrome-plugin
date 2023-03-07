@@ -27,9 +27,11 @@ async function addStep(step) {
 }
 
 function getUniqueClassForTarget(target) {
-  if (! target.className) {
-    console.debug("Could not find any classes attached to target")
+  if ((! target.className) || typeof target.className !== "string") {
+    console.debug("Could not find any classes attached to target");
+    return;
   }
+
   // Iterate over each class of the target
   for (let className of target.className.split(' ')) {
     // Skip empty class names
