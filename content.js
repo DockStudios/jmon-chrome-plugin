@@ -79,44 +79,54 @@ function identifierLooksRandom(id) {
   return result;
 }
 
-function getFindForTarget(target) {
+function getFindForTarget(target, indentationCount=3) {
   // Calculate how to find element
-  let step = `   - find:\n`;
+  let ind = ' '.repeat(indentationCount);
+  let step = `${ind}- find:\n`;
   let uniqueClassName = getUniqueClassForTarget(target);
+  let parentIndentationCount = indentationCount;
   // Check for ID match
   if (target.id) {
-    step += `     - id: ${target.id}`;
+    step += `${ind}  - id: ${target.id}`;
 
   // Otherwise check for placeholder, since this
   // is more user-friendly
   } else if (target.getAttribute('placeholder')) {
-    step += `     - placeholder: ${target.getAttribute ('placeholder')}`;
+    step += `${ind}  - placeholder: ${target.getAttribute ('placeholder')}`;
 
   // Check for non-unique class names
   } else if (uniqueClassName && identifierLooksRandom(uniqueClassName)) {
-    step += `     - class: ${uniqueClassName}`;
+    step += `${ind}  - class: ${uniqueClassName}`;
 
   // Check for content
   } else if (getUniqueContentForTarget(target)) {
-    step += `     - tag: ${target.nodeName}\n     - text: ${getUniqueContentForTarget(target)}`
+    step += `${ind}  - tag: ${target.nodeName}\n${ind}  - text: ${getUniqueContentForTarget(target)}`
   
   // Use non-unique class name
   } else if (uniqueClassName) {
-    step += `     - class: ${uniqueClassName}`;
+    step += `${ind}  - class: ${uniqueClassName}`;
   } else {
-    return null;
-  }
-  return step;
+    [parentFind, parentIndentationCount] = getParentStep(target, indentationCount)
+    if (parentFind !== null) {
+
+    }
+    else {
+      return [null, parentIndentationCount];
+    }
+  } 
+
+  return [step, parentIndentationCount];
 }
 
 async function handleDomClick(event) {
   await checkCompleteStartStep("CLICK", event.target, undefined);
-  let step = getFindForTarget(event.target);
+  let [step, indentationCount] = getFindForTarget(event.target);
+  let indentation = ' '.repeat(indentationCount);
   if (!step) {
     await addStep('# WARNING: Unable to identifier for click step');
     return;
   }
-  step += `\n     - actions:\n        - click`;
+  step += `\n${indentation}  - actions:\n${indentation}     - click`;
   await addStep(step);
 }
 
@@ -125,12 +135,13 @@ async function handleDomInput(event) {
 }
 
 async function completeTypeStep(target, text) {
-  let step = getFindForTarget(target);
+  let [step, indentationCount] = getFindForTarget(target);
+  let indentation = ' '.repeat(indentationCount);
   if (!step) {
     await addStep('# WARNING: Unable to identifier for text typing');
     return;
   }
-  step += `\n     - actions:\n        - type: ${text}`;
+  step += `\n${indentation}  - actions:\n${indentation}     - type: ${text}`;
   await addStep(step);
 }
 
@@ -140,12 +151,13 @@ async function addCheckStepContextMenuContent() {
     console.log("Cannot find current context menu item")
     return;
   }
-  let step = getFindForTarget(currentContextMenuTarget.target);
+  let [step, indentationCount] = getFindForTarget(currentContextMenuTarget.target);
+  let indentation = ' '.repeat(indentationCount);
   if (!step) {
     await addStep("# WARNING: Unable to find identifier for element for manual content check");
     return;
   }
-  step += `\n     - check:\n        text: ${currentContextMenuTarget.target.textContent}`;
+  step += `\n${indentation}  - check:\n${indentation}     text: ${currentContextMenuTarget.target.textContent}`;
   await addStep(step);
 }
 
